@@ -30,7 +30,7 @@ LOGGING_CONFIG = {
             'level': 'INFO',
             'formatter': 'standart',
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': 'site/info.log',
+            'filename': 'logs/info.log',
             'mode': 'a',
             'maxBytes': 1048576,
             'backupCount': 10
@@ -39,7 +39,7 @@ LOGGING_CONFIG = {
             'level': 'WARNING',
             'formatter': 'standart',
             'class': 'logging.FileHandler',
-            'filename': 'site/error.log',
+            'filename': 'logs/error.log',
             'mode': 'a',
         },
         # 'critical_mail_handler': {

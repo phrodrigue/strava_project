@@ -1,5 +1,6 @@
 from flask import Blueprint, current_app, jsonify, request
 
+from app.utils.decorators import time_it
 from app.utils.spreadsheet import append_to_spreadsheet_from_object_id
 
 webhook_bp = Blueprint('webhook', __name__)
@@ -16,6 +17,7 @@ def validate_webhook():
 
 # Endpoint para receber eventos do webhook
 @webhook_bp.route('/', methods=['POST'])
+@time_it
 def webhook_event():
     data = request.get_json()
 
