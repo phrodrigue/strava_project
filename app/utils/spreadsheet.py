@@ -1,5 +1,5 @@
 from datetime import datetime
-import threading
+import os
 
 from flask import current_app
 import gspread
@@ -37,17 +37,12 @@ def append_to_spreadsheet_from_object_id(id):
         ]
 
     spredsheet_key = current_app.config['SPREADSHEET_KEY']
-    threading.Thread(
-        target=append_spreadsheet,
-        args=(row, spredsheet_key)
-    ).start()
+
+    root_path = str(os.path.abspath((os.path.dirname(__file__))))
+    gc = gspread.service_account(filename=root_path + '/credentials.json') # type: ignore
+    
+    sh = gc.open_by_key(spredsheet_key)
+    ws = sh.worksheet('NOVAS ATIVIDADES')
+    ws.append_row(row, value_input_option=ValueInputOption.user_entered)
 
     return row
-
-
-def append_spreadsheet(row_data, key):
-    """Funcao para possibilitar a utilizacao da API do Google de forma assincrona"""
-    gc = gspread.service_account(filename='credentials.json') # type: ignore
-    sh = gc.open_by_key(key)
-    ws = sh.worksheet('NOVAS ATIVIDADES')
-    ws.append_row(row_data, value_input_option=ValueInputOption.user_entered)
