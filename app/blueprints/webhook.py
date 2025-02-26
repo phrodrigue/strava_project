@@ -16,7 +16,7 @@ def validate_webhook():
 
 
 # Endpoint para receber eventos do webhook
-@webhook_bp.route('/', methods=['POST'])
+@webhook_bp.route('', methods=['POST'])
 @time_it
 def webhook_event():
     data = request.get_json()
