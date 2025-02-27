@@ -1,7 +1,8 @@
 from flask import Blueprint, current_app, jsonify, request
 
 from app.utils.decorators import time_it
-from app.utils.spreadsheet import append_to_spreadsheet_from_object_id
+from app.utils.spreadsheet import update_spreadsheet, append_to_spreadsheet
+from app.utils.strava.api import call
 
 webhook_bp = Blueprint('webhook', __name__)
 
@@ -21,9 +22,22 @@ def validate_webhook():
 def webhook_event():
     data = request.get_json()
 
+    if data['object_type'] != 'activity':
+        return '', 200
+
     try:
-        if data['object_type'] == 'activity' and data['aspect_type'] in ['create', 'update']:
-            append_to_spreadsheet_from_object_id(data['object_id'])
+        activity_id = data['object_id']
+        strava_response = call(f"/activities/{activity_id}", activity_id)
+
+        if data['aspect_type'] == 'create':
+            append_to_spreadsheet(strava_response)
+
+        elif data['aspect_type'] == 'update' and 'title' in data['updates'].keys():
+            update_spreadsheet(strava_response, str(activity_id))
+            
+        else:
+            # exclusão. registra os dados da atividade
+            pass
 
         response_status_code = 200
 
@@ -38,9 +52,10 @@ def webhook_event():
 @webhook_bp.route('/new_activity/<id>')
 def append_activity(id):
     try:
-        row = append_to_spreadsheet_from_object_id(id)
+        strava_response = call(f"/activities/{id}", id)
+        row = append_to_spreadsheet(strava_response)
         return row, 200
     except Exception as e:
         current_app.logger.exception(
-            'Erro ao recuperar dados de uma atividade atraves de uma URL')
+            f'Erro ao recuperar dados de uma atividade atraves de uma URL')
         return '', 400
