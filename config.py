@@ -15,6 +15,8 @@ class Config:
 
     SPREADSHEET_KEY = getenv('SPREADSHEET_KEY')
 
+    ALLOWED_SPORTS = ['Ride', 'Run', 'Workout']
+
 
 class ProdConfig(Config):
     pass

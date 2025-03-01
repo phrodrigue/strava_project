@@ -1,3 +1,4 @@
+from functools import wraps
 from time import time
 from typing import Callable
 
@@ -6,6 +7,7 @@ from flask import current_app
 
 def time_it(f: Callable):
 
+    @wraps(f)
     def wrapper(*args, **kargs):
         start = time()
         result = f(*args, **kargs)

@@ -1,8 +1,8 @@
 from logging.config import dictConfig
-from app.utils import LOGGING_CONFIG
-
+from app.utils.logging import LOGGING_CONFIG
 dictConfig(LOGGING_CONFIG)
 
+from app.utils import create_response
 from os import getenv
 
 from flask import Flask
@@ -31,24 +31,21 @@ def create_app():
     with app.app_context():
         db.create_all()
 
+
     @app.route('/')
     def index():
-        return 'Oi!'
+        return create_response('Oi!', 200)
 
-    @app.route('/success')
-    def login_success():
-        app.logger.info('Novo login!')
-        return 'Login realizado com sucesso!\nPode fechar essa janela.'
 
     @app.route('/activity/<id>')
     def activity(id):
         try:
-            response = call(f'/activities/{id}', id)
-            return response.JSON
+            response = call(f'/activities/{id}', id, only_search=True)
+            return create_response(response.JSON, 200)
+
         except Exception as e:
             msg = f'Erro ao solicitar dados da atividade: {repr(e)}'
             app.logger.exception(msg)
-            resp = {'message': msg}
-            return resp, 400
+            return create_response(msg, 400)
 
     return app

@@ -4,12 +4,13 @@ from flask import current_app
 import requests
 
 from app.utils import generate_auth_url, generate_new_activity_url
+from app.utils.exceptions import APIResponseException, SportNotAllowedException
 from app.utils.strava.response import StravaResponse
 from app.utils.strava.tokens import refresh_token
 from app.utils.tokens_db import get_tokens
 
 
-def call(path, activity_id) -> StravaResponse:
+def call(path, activity_id, only_search=False) -> StravaResponse:
     """Faz uma chamada para a API do Strava e retorna um objeto 'StravaResponse' com os dados recebidos"""
     tokens = get_tokens(current_app.config['USER_ID'])
     if not tokens:
@@ -33,15 +34,13 @@ def call(path, activity_id) -> StravaResponse:
             return StravaResponse(token_expired=True, json=json_message)
 
     headers = {'Authorization': f"Bearer {access_token}"}
-    response = requests.get(
-        f"{current_app.config['API_URL']}{path}", headers=headers)
+    response = requests.get(f"{current_app.config['API_URL']}{path}", headers=headers)
+    response_json = response.json()
+
     if response.status_code != 200:
-        current_app.logger.error(f'Erro ao fazer chamada a API do Strava\n{response.json()}')
-        json_message = {
-            'status_code': response.status_code,
-            'message': response.json()['message'],
-            'url': '-'
-        }
-        return StravaResponse(request_error=True, json=json_message)
+        raise APIResponseException(f'Erro ao fazer chamada a API do Strava\n{response_json}')
+
+    if not only_search and response_json['sport_type'] not in current_app.config['ALLOWED_SPORTS']:
+        raise SportNotAllowedException(response_json['sport_type'])
 
     return StravaResponse(json=response.json())

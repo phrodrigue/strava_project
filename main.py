@@ -1,7 +1,6 @@
 from dotenv import load_dotenv
 import os
 
-
 root_path = str(os.path.abspath((os.path.dirname(__file__))))
 load_dotenv(root_path + "/.env")
 
