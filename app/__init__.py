@@ -17,8 +17,6 @@ migrate = Migrate()
 def create_app():
     app = Flask(__name__)
     app.config.from_object(getenv('CONFIG'))
-    app.debug = False
-    app.secret_key = app.config['SECRET_KEY']
 
     # Inicializa o banco de dados
     db.init_app(app)
@@ -33,7 +31,8 @@ def create_app():
 
     with app.app_context():
         db.create_all()
-
+        from app.models.atividades import inicialize_activity_state_db
+        inicialize_activity_state_db()
 
     @app.route('/')
     def index():
