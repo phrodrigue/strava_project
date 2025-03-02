@@ -1,7 +1,7 @@
 from flask import current_app
 
 from app import db
-from app.models.tokens import Token
+from app.models import Token
 
 
 def save_tokens(access_token, refresh_token, expires_at):

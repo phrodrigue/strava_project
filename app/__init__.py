@@ -6,10 +6,12 @@ from app.utils import create_response
 from os import getenv
 
 from flask import Flask
+from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 
 
 db = SQLAlchemy()
+migrate = Migrate()
 
 
 def create_app():
@@ -20,6 +22,7 @@ def create_app():
 
     # Inicializa o banco de dados
     db.init_app(app)
+    migrate.init_app(app, db)
 
     # Importa e registra os blueprints
     from app.blueprints import auth_bp, webhook_bp
