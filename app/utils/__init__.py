@@ -24,11 +24,3 @@ def generate_new_activity_url(id):
 def create_response(msg: str | list | dict, status_code: int):
     """Cria uma resposta json padronizada para todo a aplicação"""
     return jsonify({'message': msg}), status_code
-
-
-def seconds_to_hours(seconds):
-    """Converte o tempo em segundos para o formato H:MM:SS"""
-    hours, rest = divmod(seconds, 3600)
-    minutes, seconds = divmod(rest, 60)
-
-    return f"{int(hours)}:{int(minutes):02d}:{int(seconds):02d}"

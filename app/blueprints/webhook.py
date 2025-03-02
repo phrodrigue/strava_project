@@ -19,7 +19,7 @@ def validate_webhook():
 
 
 # Endpoint para receber eventos do webhook
-@webhook_bp.route('', methods=['POST'])
+@webhook_bp.route('/', methods=['POST'])
 @time_it
 def webhook_event():
     ok_response = create_response('', 200)
@@ -34,10 +34,10 @@ def webhook_event():
         strava_response = call(f"/activities/{activity_id}", activity_id)
 
         if data['aspect_type'] == 'create':
-            append_to_spreadsheet(strava_response)
+            append_to_spreadsheet(strava_response, activity_id)
 
         elif data['aspect_type'] == 'update' and 'title' in data['updates'].keys():
-            update_spreadsheet(strava_response, str(activity_id))
+            update_spreadsheet(strava_response, activity_id)
 
         else:
             # exclusão. registra os dados da atividade
@@ -63,8 +63,9 @@ def webhook_event():
 def append_activity(id):
     try:
         strava_response = call(f"/activities/{id}", id)
-        row = append_to_spreadsheet(strava_response)
-        return create_response(row, 200)
+        row = append_to_spreadsheet(strava_response, id)
+        response = {'msg': 'Sucesso!', 'row': row}
+        return create_response(response, 200)
 
     except SportNotAllowedException as e:
         return create_response(e.message, 400)
