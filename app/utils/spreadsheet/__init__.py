@@ -53,7 +53,7 @@ def update_spreadsheet(data: StravaResponse, activity_id: int):
 
     ws.update(
         [spreadsheet_row.new],
-        f'B{cell.row}:F{cell.row}',
+        f'B{cell.row}:G{cell.row}',
         value_input_option=ValueInputOption.user_entered
     )
     ws.format(
