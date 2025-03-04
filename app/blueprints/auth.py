@@ -14,9 +14,10 @@ def login():
 @auth_bp.route('/success')
 def login_success():
     current_app.logger.info('Novo login!')
-    return create_response('Login realizado com sucesso!\nPode fechar essa janela.', 200)
+    return create_response('Login realizado com sucesso! Pode fechar essa janela.', 200)
 
 
+@auth_bp.route('/callback/')
 @auth_bp.route('/callback/<path:next>')
 def callback(next=None):
     code = request.args.get('code')
