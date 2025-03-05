@@ -1,2 +1,3 @@
-from .tokens import Token
-from .activities import Activity, ActivityState
+from .token import Token
+from .activity_state import ActivityState
+from .activity import Activity

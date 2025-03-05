@@ -34,7 +34,7 @@ def create_app():
 
     with app.app_context():
         db.create_all()
-        from app.models.activities import inicialize_activity_state_db
+        from app.models.activity_state import inicialize_activity_state_db
         inicialize_activity_state_db()
 
     @app.errorhandler(HTTPException)

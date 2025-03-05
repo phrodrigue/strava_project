@@ -1,5 +1,5 @@
 from app import db
-from app.models.activities import Activity, ActivityState
+from app.models import Activity, ActivityState
 
 
 def get_activity(strava_id: str) -> Activity:
