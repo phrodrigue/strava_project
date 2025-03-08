@@ -1,0 +1,21 @@
+{% extends '_base.html' %}
+
+{% block title %}
+Aguarde...
+{% endblock %}
+
+{% block content %}
+<div class="position-absolute top-50 start-50 translate-middle">
+    <div class="spinner-border text-success" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+    localStorage.setItem('jwt', '{{jwt}}')
+    localStorage.setItem('refresh_token', '{{refresh_token}}')
+    window.location.replace('{{next}}')
+</script>
+{% endblock %}

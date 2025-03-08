@@ -1,5 +1,7 @@
 from app import db
-from app.models import Activity, ActivityState
+from app.models import Activity, ActivityState, User
+from app.utils.db_user import get_user_or_none
+from app.utils.strava.response import StravaResponse
 
 
 def get_activity(strava_id: str) -> Activity:
@@ -23,27 +25,30 @@ def get_activity_state(desc: str) -> ActivityState:
     return state
 
 
-def add_to_db(ok: bool, strava_id: str, desc: str):
+def add_to_db(strava_response: StravaResponse, strava_id: str, desc: str, user: User):
     activity = get_activity_or_none(strava_id)
 
     if not activity:
-        state_str = 'Criado' if ok else 'Aguardando dados'
+        state_str = 'Criado' if strava_response.OK else 'Aguardando dados'
         state = get_activity_state(state_str)
 
-        activity = Activity(strava_id, desc, state)
+        activity = Activity(strava_id, desc, state, user)
         db.session.add(activity)
     else:
         state = get_activity_state('Restaurado')
         activity.state = state
         activity.last_update_desc = desc
+        if activity.user_id != user.strava_id:
+            activity.user = user
 
 
-def update_db(strava_id: str, desc: str):
+def update_db(strava_id: str, desc: str, user: User):
     state = get_activity_state('Atualizado')
 
     activity = get_activity(strava_id)
     activity.last_update_desc = desc
     activity.state = state
+    activity.user = user
 
 
 def delete_db(strava_id: str, desc: str):

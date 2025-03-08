@@ -1,0 +1,196 @@
+{% extends '_base.html' %}
+
+{% block title %}
+Início
+{% endblock %}
+
+{% block style %}
+<style>
+    pre {
+        background-color: #f1f1f1;
+        padding: 10px;
+    }
+
+    #comp_info {
+        max-height: 84vh;
+        overflow: scroll;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="position-absolute top-50 start-50 translate-middle" id="main_spinner">
+    <div class="spinner-border text-success" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+</div>
+
+<div class="row gap-3 d-none" id="main">
+    <div class="row col-12 col-md-6 gap-3">
+        <!-- CONTROLES -->
+        <div class="col-sm col-md-12">
+            <form>
+                <div class="mb-3">
+                    <label for="strava_id" class="form-label">Atividade</label>
+                    <input type="number" class="form-control" id="strava_id">
+                </div>
+                <div class="row gap-3 px-3">
+                    <button class="col btn btn-primary" id="load_activity_btn">Carregar</button>
+                    <button class="col btn btn-success" id="sync_activity_btn">Sincronizar</button>
+                </div>
+            </form>
+        </div>
+        <!-- INFO DA ATIVIDADE -->
+        <div id="activity_filtered" class="col-sm col-md-12">
+            <div class="position-absolute top-50 start-50 translate-middle" id="info_spinner">
+                <div class="spinner-border text-success" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+            <div class="row col px-3 border rounded-3 d-none" id="info">
+                <div class="row col-12">
+                    <div class="col-4">Nome</div>
+                    <div class="col" id="result_name"></div>
+                </div>
+                <div class="row col-12">
+                    <div class="col-4">Distância</div>
+                    <div class="col" id="result_distance"></div>
+                </div>
+                <div class="row col-12">
+                    <div class="col-4">Duração</div>
+                    <div class="col" id="result_duration"></div>
+                </div>
+                <div class="row col-12">
+                    <div class="col-4">Data</div>
+                    <div class="col" id="result_date"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- INFO COMPLETA DA ATIVIDADE -->
+    <div id="activity_result" class="col-12 col-md-6">
+        <div class="position-absolute top-50 start-50 translate-middle" id="comp_info_spinner">
+            <div class="spinner-border text-success" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+        <div id="comp_info" class="d-none">
+            <pre><code id="activity_raw">...</code></pre>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+    let jwt = localStorage.getItem('jwt')
+    let refresh = localStorage.getItem('refresh_token')
+    
+    if (!jwt || !refresh) {
+        window.location.replace(`/auth?next=${window.location.pathname}`)
+    }
+
+    const secondsToHours = (seconds) => {
+        dateObj = new Date(seconds * 1000);
+        hours = dateObj.getUTCHours();
+        minutes = dateObj.getUTCMinutes();
+        seconds = dateObj.getSeconds();
+        return hours.toString().padStart(2, '0') + ':' + 
+            minutes.toString().padStart(2, '0') + ':' + 
+            seconds.toString().padStart(2, '0');
+    }
+
+</script>
+<script>    
+    document.querySelector('#main_spinner').classList.add('d-none')
+    document.querySelector('#main').classList.remove('d-none')
+
+    const hideActivityResult = () => {
+        document.querySelector('#comp_info').classList.add('d-none')
+        document.querySelector('#info').classList.add('d-none')
+        document.querySelector('#comp_info_spinner').classList.remove('d-none')
+        document.querySelector('#info_spinner').classList.remove('d-none')
+    }
+    
+    const showActivityResult = (result_ok=false) => {
+        document.querySelector('#comp_info_spinner').classList.add('d-none')
+        document.querySelector('#comp_info').classList.remove('d-none')
+        document.querySelector('#info_spinner').classList.add('d-none')
+        if (result_ok) {
+            document.querySelector('#info').classList.remove('d-none')
+        }
+    }
+
+    const refresh_jwt_token = async (refresh_token) => {
+        const options = {
+            method: 'post',
+            headers: {
+                Authorization: `Bearer ${localStorage.getItem('refresh_token')}`,
+            }
+        };
+        const response = await fetch('/auth/refresh_jwt_token', options);
+        const result = await response.json();
+        localStorage.setItem('jwt', result['message']['access_token']);
+    }
+
+    const makeRequest = async (id, sync=false) => {
+        hideActivityResult()
+        const url = sync ? `/activity/sync/${id}` : `/activity/${id}`
+        let response;
+
+        while (true) {
+            const options = {
+                method: 'get',
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('jwt')}`,
+                }
+            };
+            response = await fetch(url, options);
+
+            if (response.status != 401) { // UNAUTHORIZED
+                const result = await response.json();
+                let txt;
+                if (response.ok) {
+                    txt = JSON.stringify(result.message.data, null, 2)
+
+                    document.getElementById('result_name').innerText = result.message.data.name
+                    document.getElementById('result_distance').innerText = `${(result.message.data.distance / 1000).toFixed(2)}km`
+                    document.getElementById('result_duration').innerText = secondsToHours(result.message.data.moving_time)
+                    document.getElementById('result_date').innerText = new Date(result.message.data.start_date).toLocaleString("pt-BR")
+
+                    window.history.pushState({}, '', `/${id}`);
+                } else {
+                    txt = result.message
+                }
+                document.getElementById('strava_id').value = id
+                document.getElementById('activity_raw').textContent = txt
+                break
+            } else {
+                await refresh_jwt_token()
+            }
+        }
+        showActivityResult(response.ok)
+    }
+
+    document.getElementById('load_activity_btn').addEventListener('click', (e) => {
+        e.preventDefault()
+        let activity_id = document.getElementById('strava_id').value
+        makeRequest(activity_id)
+    })
+
+    document.getElementById('sync_activity_btn').addEventListener('click', (e) => {
+        e.preventDefault()
+        let activity_id = document.getElementById('strava_id').value
+        makeRequest(activity_id, true)
+    })
+
+    window.onload = (event) => {
+        const strava_id = '{{strava_id}}'
+        if (strava_id) {
+            makeRequest(strava_id)
+        } else {
+            showActivityResult()
+        }
+    };
+</script>
+{% endblock %}

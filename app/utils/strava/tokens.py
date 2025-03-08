@@ -1,7 +1,8 @@
 from flask import current_app
 import requests
 
-from app.utils.db_tokens import get_tokens, save_tokens
+from app.models.user import User
+from app.utils.db_tokens import get_tokens
 
 
 def get_new_token(code):
@@ -19,19 +20,12 @@ def get_new_token(code):
         current_app.logger.error(response.json())
         return
 
-    tokens = response.json()
-    save_tokens(
-        tokens['access_token'],
-        tokens['refresh_token'],
-        tokens['expires_at']
-    )
-
-    return True
+    return response.json()
 
 
-def refresh_token():
+def refresh_token(user: User):
     """Solicita um novo token"""
-    tokens = get_tokens(current_app.config['USER_ID'])
+    tokens = get_tokens(user)
 
     if not tokens:
         return
@@ -50,11 +44,4 @@ def refresh_token():
         current_app.logger.error(response.json())
         return
 
-    new_tokens = response.json()
-    save_tokens(
-        new_tokens['access_token'],
-        new_tokens['refresh_token'],
-        new_tokens['expires_at']
-    )
-
-    return new_tokens['access_token']
+    return response.json()

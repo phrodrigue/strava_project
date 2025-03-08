@@ -34,7 +34,6 @@ def append_to_spreadsheet(data: StravaResponse, strava_id: int):
                 }
         }
     )
-    return spreadsheet_row.new
 
 
 def update_in_spreadsheet(data: StravaResponse, strava_id: int):
@@ -65,7 +64,6 @@ def update_in_spreadsheet(data: StravaResponse, strava_id: int):
             }
         }
     )
-    return spreadsheet_row.new
 
 
 def delete_in_spreadsheet(strava_id: int):

@@ -1,3 +1,4 @@
+from datetime import timedelta
 from os import getenv
 
 
@@ -12,10 +13,13 @@ class Config:
     CLIENT_SECRET = getenv('CLIENT_SECRET')
     REDIRECT_URI = getenv('REDIRECT_URI')
     API_URL = 'https://www.strava.com/api/v3'
+    # JWT config
+    JWT_SECRET_KEY = getenv('JWT_SECRET_KEY')
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=60)
+    JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
     # planilha
     SPREADSHEET_KEY = getenv('SPREADSHEET_KEY')
     # outros
-    USER_ID = getenv('USER_ID')
     ALLOWED_SPORTS = ['Ride', 'Run', 'Workout']
 
 

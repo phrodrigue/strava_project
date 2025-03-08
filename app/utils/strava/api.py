@@ -3,6 +3,7 @@ import time
 from flask import current_app
 import requests
 
+from app.models import User
 from app.utils import generate_auth_url, generate_new_activity_url
 from app.utils.db_tokens import get_tokens
 from app.utils.exceptions import APIResponseException, DeletedActivityException, SportNotAllowedException
@@ -10,9 +11,9 @@ from app.utils.strava.response import StravaResponse
 from app.utils.strava.tokens import refresh_token
 
 
-def call(path, activity_id, only_search=False) -> StravaResponse:
+def call(path: str, activity_id, user: User, only_search=False) -> StravaResponse:
     """Faz uma chamada para a API do Strava e retorna um objeto 'StravaResponse' com os dados recebidos"""
-    token = get_tokens(current_app.config['USER_ID'])
+    token = get_tokens(user)
     if not token:
         json_message = {
             'message': 'tokens not found',
@@ -24,13 +25,14 @@ def call(path, activity_id, only_search=False) -> StravaResponse:
 
     # Verifica se o token expirou e renova se necessário
     if time.time() > token.expires_at:
-        access_token = refresh_token()
-        if not access_token:
+        new_token = refresh_token(user)
+        if not new_token:
             json_message = {
                 'message': 'tokens expired',
                 'url': generate_auth_url(next=generate_new_activity_url(activity_id))
             }
             return StravaResponse(token_expired=True, json=json_message)
+        access_token = new_token['access_token']
 
     headers = {'Authorization': f"Bearer {access_token}"}
     response = requests.get(f"{current_app.config['API_URL']}{path}", headers=headers)
