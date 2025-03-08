@@ -11,14 +11,9 @@ def generate_auth_url(next):
     )
 
 
-def generate_activity_url(strava_id):
-    """Cria uma URL para recuperar dados de uma atividade no Strava"""
-    return url_for('activity.get', _external=True, strava_id=strava_id)
-
-
-def generate_new_activity_url(strava_id):
+def create_activity_url(strava_id, external=False):
     """Cria uma URL para recuperar dados de uma nova atividade no Strava e salvar na planilha"""
-    return url_for('index', next=f'/{strava_id}')
+    return url_for('index', next=f'/{strava_id}', _external=external)
 
 
 def create_response(msg: str | list | dict | None = None, status_code: int = 200):

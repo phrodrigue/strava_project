@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from app.utils import generate_activity_url
+from app.utils import create_activity_url
 from app.utils.strava.response import StravaResponse
 
 
@@ -34,5 +34,5 @@ class SpreadsheetRow:
                 date_obj.strftime("%d/%m/%Y"),
                 data.JSON['distance'],
                 time_str,
-                generate_activity_url(data.JSON['id'])
+                create_activity_url(data.JSON['id'], external=True)
             ]

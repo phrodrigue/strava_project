@@ -4,7 +4,7 @@ from flask import current_app
 import requests
 
 from app.models import User
-from app.utils import generate_auth_url, generate_new_activity_url
+from app.utils import generate_auth_url, create_activity_url
 from app.utils.db_tokens import get_tokens
 from app.utils.exceptions import APIResponseException, DeletedActivityException, SportNotAllowedException
 from app.utils.strava.response import StravaResponse
@@ -17,7 +17,7 @@ def call(path: str, activity_id, user: User, only_search=False) -> StravaRespons
     if not token:
         json_message = {
             'message': 'tokens not found',
-            'url': generate_auth_url(next=generate_new_activity_url(activity_id))
+            'url': generate_auth_url(next=create_activity_url(activity_id))
         }
         return StravaResponse(token_not_present=True, json=json_message)
 
@@ -29,7 +29,7 @@ def call(path: str, activity_id, user: User, only_search=False) -> StravaRespons
         if not new_token:
             json_message = {
                 'message': 'tokens expired',
-                'url': generate_auth_url(next=generate_new_activity_url(activity_id))
+                'url': generate_auth_url(next=create_activity_url(activity_id))
             }
             return StravaResponse(token_expired=True, json=json_message)
         access_token = new_token['access_token']
