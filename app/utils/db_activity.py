@@ -25,27 +25,31 @@ def get_activity_state(desc: str) -> ActivityState:
     return state
 
 
-def add_to_db(strava_response: StravaResponse, strava_id: str, desc: str, user: User):
+def add_to_db(strava_response: StravaResponse, desc: str, user: User):
+    strava_id = strava_response.JSON['id']
     activity = get_activity_or_none(strava_id)
 
     if not activity:
         state_str = 'Criado' if strava_response.OK else 'Aguardando dados'
         state = get_activity_state(state_str)
+        type = strava_response.JSON.get('type')
 
-        activity = Activity(strava_id, desc, state, user)
+        activity = Activity(strava_id, type, desc, state, user)
         db.session.add(activity)
     else:
         state = get_activity_state('Restaurado')
+        activity.type = strava_response.JSON.get('type') # type: ignore
         activity.state = state
         activity.last_update_desc = desc
         if activity.user_id != user.strava_id:
             activity.user = user
 
 
-def update_db(strava_id: str, desc: str, user: User):
+def update_db(strava_response: StravaResponse, desc: str, user: User):
     state = get_activity_state('Atualizado')
 
-    activity = get_activity(strava_id)
+    activity = get_activity(strava_response.JSON['id'])
+    activity.type = strava_response.JSON.get('type') # type: ignore
     activity.last_update_desc = desc
     activity.state = state
     activity.user = user

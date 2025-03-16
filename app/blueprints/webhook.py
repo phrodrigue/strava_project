@@ -55,11 +55,11 @@ def webhook_event():
         if data['aspect_type'] == 'create':
             action = 'criada' if not activity else 'restaurada'
             append_to_spreadsheet(strava_response, activity_strava_id)
-            add_to_db(strava_response, activity_strava_id, f'{action} pelo webhook', user)
+            add_to_db(strava_response, f'{action} pelo webhook', user)
 
-        elif data['aspect_type'] == 'update' and 'title' in data['updates'].keys():
+        elif data['aspect_type'] == 'update':
             update_in_spreadsheet(strava_response, activity_strava_id)
-            update_db(activity_strava_id, 'atualizada pelo webhook', user)
+            update_db(strava_response, 'atualizada pelo webhook', user)
 
     except SportNotAllowedException as e:
         # indica que foi processado mas o esporte não interessa. nao precisa de outra chamada

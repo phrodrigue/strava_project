@@ -42,18 +42,18 @@ def sync(strava_id=None):
 
         if not db_activity:
             append_to_spreadsheet(strava_response, strava_id)
-            add_to_db(strava_response, strava_id, 'criada pela url', current_user)
+            add_to_db(strava_response, 'criada pela url', current_user)
             info = 'Atividade criada!'
 
         elif db_activity.state.description == 'Excluido':
             append_to_spreadsheet(strava_response, strava_id)
-            add_to_db(strava_response, strava_id, 'restaurada pela url', current_user)
+            add_to_db(strava_response, 'restaurada pela url', current_user)
             info = 'Atividade restaurada.'
     
         else:
             # state in ['Criado', 'Atualizado', 'Restaurado', 'Aguardando dados']
             update_in_spreadsheet(strava_response, strava_id)
-            update_db(strava_id, 'atualizada pela url', current_user)
+            update_db(strava_response, 'atualizada pela url', current_user)
             info = 'Atividade atualizada.'
 
     except SportNotAllowedException as e:
