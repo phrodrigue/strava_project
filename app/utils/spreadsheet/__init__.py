@@ -52,7 +52,7 @@ def update_in_spreadsheet(data: StravaResponse, strava_id: int):
 
     ws.update(
         [spreadsheet_row.new[1:]],
-        f'B{cell.row}:G{cell.row}',
+        f'B{cell.row}:F{cell.row}',
         value_input_option=ValueInputOption.user_entered
     )
     ws.format(
@@ -80,7 +80,7 @@ def delete_in_spreadsheet(strava_id: int):
         value_input_option=ValueInputOption.user_entered
     )
     ws.format(
-        f'A{cell.row}:G{cell.row}',
+        f'A{cell.row}:F{cell.row}',
         {
             'textFormat': {
                 'strikethrough': True,

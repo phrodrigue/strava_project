@@ -28,11 +28,10 @@ class SpreadsheetRow:
             time_str = f"{int(hours)}:{int(minutes):02d}:{int(seconds):02d}"
 
             self.new = [
-                data.JSON['id'],
+                f'=HIPERLINK("{create_activity_url(data.JSON['id'], external=True)}";"{data.JSON['id']}")',
                 data.JSON['name'],
                 data.JSON['type'],
                 date_obj.strftime("%d/%m/%Y"),
                 data.JSON['distance'],
                 time_str,
-                create_activity_url(data.JSON['id'], external=True)
             ]
