@@ -5,6 +5,7 @@ from os import getenv
 class Config:
     # app
     SECRET_KEY = getenv('SECRET_KEY')
+    SERVER_NAME = getenv('SERVER_NAME')
     # banco de dados
     SQLALCHEMY_DATABASE_URI = getenv('DATABASE_URL')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
@@ -21,6 +22,7 @@ class Config:
     SPREADSHEET_KEY = getenv('SPREADSHEET_KEY')
     # outros
     ALLOWED_SPORTS = ['Ride', 'Run', 'Workout']
+    JSON_ACTIVITY_PATH = getenv('JSON_ACTIVITY_PATH')
 
 
 class ProdConfig(Config):

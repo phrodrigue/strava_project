@@ -52,12 +52,12 @@ def create_app():
     from app.blueprints import activity_bp
     from app.blueprints import auth_bp
     from app.blueprints import webhook_bp
-    from app.blueprints import cli_bp
+    from app.blueprints import cli
 
     app.register_blueprint(activity_bp, url_prefix='/activity')
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(webhook_bp, url_prefix='/webhook')
-    app.register_blueprint(cli_bp)
+    app.cli.add_command(cli)
 
     @app.shell_context_processor
     def make_shell_context():

@@ -1,13 +1,17 @@
-from flask import Blueprint
+from flask.cli import AppGroup
 
 from app import db
 from app.models import User
 from app.models import ActivityState
+from app.models.activity import Activity
+from app.blueprints.cli.update import update
 
-cli_bp = Blueprint('cli', __name__, cli_group=None)
+
+cli = AppGroup('ph')
+cli.add_command(update)
 
 
-@cli_bp.cli.command('populate')
+@cli.command('populate')
 def populate():
     """
     Cria os estados das atividades e o usuário padrão no banco de dados
@@ -42,3 +46,18 @@ def populate():
     
     db.session.commit()
     print('Todas as entidades salvas no DB.')
+
+
+#####   REVISITAR
+@cli.command('dump')
+# @click.argument('user_id')
+def dump():
+    """
+    Salva os dados da tabela 'activities' em um arquivo JSON
+    """
+    activities = db.session.execute(
+        db.select(Activity)
+    ).scalars().all()
+
+    for activity in activities:
+        print(activity)
