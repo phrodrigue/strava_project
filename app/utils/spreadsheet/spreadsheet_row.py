@@ -13,9 +13,9 @@ class SpreadsheetRow:
                 data.JSON['message'],
                 '',
                 '',
-                f'=HIPERLINK("{data.JSON['id']}";"LOGIN")',
+                f'=HIPERLINK(\"{data.JSON["id"]}\";\"LOGIN\")',
             ]
-        
+
         else:
             activity_date = data.JSON['start_date_local']
             date_obj = datetime.strptime(activity_date, "%Y-%m-%dT%H:%M:%SZ")
@@ -27,7 +27,7 @@ class SpreadsheetRow:
             time_str = f"{int(hours)}:{int(minutes):02d}:{int(seconds):02d}"
 
             self.new = [
-                f'=HIPERLINK("{create_activity_url(data.JSON['id'], external=True)}";"{data.JSON['id']}")',
+                f'=HIPERLINK(\"{create_activity_url(data.JSON["id"], external=True)}\";\"{data.JSON["id"]}\")',
                 data.JSON['name'],
                 data.JSON['type'],
                 date_obj.strftime("%d/%m/%Y"),

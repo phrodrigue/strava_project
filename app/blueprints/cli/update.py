@@ -32,13 +32,13 @@ def get_all_activities(user):
     user = get_user_or_none(user)
     if not user:
         print('Usuário não encontrado')
-        print(f'Para fazer o login, acesse:\n{generate_auth_url('/')}')
+        print(f'Para fazer o login, acesse:\n{generate_auth_url("/")}')
         return
-    
+
     token = get_tokens(user)
     if not token:
         print(f'Nenhum token encontrado para o usuário {user.name}')
-        print(f'Para fazer o login, acesse:\n{generate_auth_url('/')}')
+        print(f'Para fazer o login, acesse:\n{generate_auth_url("/")}')
         return
 
     access_token = token.access_token
@@ -48,7 +48,7 @@ def get_all_activities(user):
         new_token = refresh_token(user)
         if not new_token:
             print(f'Não foi possível renovar o token do usuário {user.name}')
-            print(f'Refaça o login acessando:\n{generate_auth_url('/')}')
+            print(f'Refaça o login acessando:\n{generate_auth_url("/")}')
             return
         print('Token renovado.')
         access_token = new_token['access_token']
@@ -62,11 +62,11 @@ def get_all_activities(user):
 
     final: dict[str, dict] = {}
 
-    print(f'Por página: {params['per_page']}')
+    print(f'Por página: {params["per_page"]}')
     while True:
-        print(f'Buscando página {params['page']}...')
+        print(f'Buscando página {params["page"]}...')
         response = requests.get(
-            f'{current_app.config['API_URL']}/athlete/activities',
+            f'{current_app.config["API_URL"]}/athlete/activities',
             headers = headers,
             params = params
         )
@@ -75,9 +75,9 @@ def get_all_activities(user):
         if not activities:
             print('Nenhuma atividade encontrada.')
             break
-        
+
         for activity in activities:
-            print(f'Adicionando atividade {activity['id']}...')
+            print(f'Adicionando atividade {activity["id"]}...')
             final[activity['id']] = {
                 'id': activity['id'],
                 'user_id': activity['athlete']['id'],
@@ -89,7 +89,7 @@ def get_all_activities(user):
                 'start_date': activity['start_date'],
                 'start_date_local': activity['start_date_local']
             }
-            
+
         params['page'] += 1
 
     with open('instance/all_activities.json', 'w') as file:
@@ -110,7 +110,7 @@ def save_to_db(user):
         return
 
     file_path = current_app.config['JSON_ACTIVITY_PATH']
-    
+
     if not os.path.isfile(file_path):
         print('Arquivo com atividades não encontrado.')
         return
@@ -148,14 +148,14 @@ def save_to_spreadsheet():
     Atualiza a planilha com as atividades salvas no arquivo JSON
     """
     file_path = current_app.config['JSON_ACTIVITY_PATH']
-    
+
     if not os.path.isfile(file_path):
         print('Arquivo com atividades não encontrado.')
         return
 
     with open(file_path, 'r') as file:
         activities: dict = json.load(file)
-    
+
     to_add = []
     ws = open_worksheet()
     all_rows = ws.get_all_values()
@@ -170,7 +170,7 @@ def save_to_spreadsheet():
 
         resp = StravaResponse(json=activity)
         to_add.append(SpreadsheetRow(resp, id).new)
-    
+
     if to_add:
         ws.append_rows(
             values=to_add,

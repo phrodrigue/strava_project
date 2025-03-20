@@ -13,7 +13,7 @@ def open_worksheet():
 
     root_path = str(os.path.abspath((os.path.dirname(__file__))))
     gc = gspread.service_account(filename=root_path + '/credentials.json') # type: ignore
-    
+
     sh = gc.open_by_key(spredsheet_key)
     ws = sh.worksheet('NOVAS ATIVIDADES')
     return ws
@@ -25,6 +25,15 @@ def append_to_spreadsheet(data: StravaResponse, strava_id: int):
 
     ws = open_worksheet()
     ws.append_row(spreadsheet_row.new, value_input_option=ValueInputOption.user_entered)
+    ws.format(
+        'D',
+        {
+            'numberFormat': {
+                "type": 'DATE',
+                "pattern": 'ddd", "dd"/"mm"/"yy'
+                }
+        }
+    )
     ws.format(
         'E',
         {
@@ -40,20 +49,29 @@ def update_in_spreadsheet(data: StravaResponse, strava_id: int):
     if not data.OK:
         current_app.logger.error(f'erro ao atualizar atividade: {data.JSON}')
         return
-    
+
     ws = open_worksheet()
     cell = ws.find(str(strava_id))
 
     if not cell:
         current_app.logger.error(f'atividade nao encontrada na planilha [{strava_id}]')
         return
-    
+
     spreadsheet_row = SpreadsheetRow(data, strava_id)
 
     ws.update(
         [spreadsheet_row.new[1:]],
         f'B{cell.row}:F{cell.row}',
         value_input_option=ValueInputOption.user_entered
+    )
+    ws.format(
+        f'D{cell.row}',
+        {
+            'numberFormat': {
+                "type": 'DATE',
+                "pattern": 'ddd", "dd"/"mm"/"yy'
+                }
+        }
     )
     ws.format(
         f'E{cell.row}',
