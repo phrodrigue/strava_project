@@ -13,8 +13,7 @@ class SpreadsheetRow:
                 data.JSON['message'],
                 '',
                 '',
-                'LOGIN:',
-                data.JSON['url'],
+                f'=HIPERLINK("{data.JSON['id']}";"LOGIN")',
             ]
         
         else:
