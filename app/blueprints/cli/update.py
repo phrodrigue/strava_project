@@ -1,5 +1,5 @@
 import json
-import time
+from time import sleep
 from flask import current_app
 from flask.cli import AppGroup
 from gspread.utils import ValueInputOption
@@ -147,13 +147,19 @@ def temp(user: User, activities: dict):
      - comando temporário
     """
     ws = open_worksheet()
+    sheet_lines = ws.get_all_values()
 
     criado_state = get_activity_state('Atualizado')
     to_add_in_db = []
     to_add_in_sheet = []
 
+    tot_activities = len(activities)
+    print(f'Atualizando <{tot_activities}> atividades.')
+
+    i = 1
     for id, activity in activities.items():
-        print(f'\n--\n\nAtualizando atividade [{id}]')
+        print(f'\n--\n\n[{i:0>3}/{tot_activities:0>3}] Atualizando atividade [{id}]')
+        i += 1
         # atualiza no DB
         a = get_activity_or_none(id)
         if not a:
@@ -178,8 +184,13 @@ def temp(user: User, activities: dict):
             print(f'Atividade atualizada no DB.')
         
         # atualiza na planilha
-        cell = ws.find(str(id))
-        if cell:
+        n_row = 0
+        for i, line in enumerate(sheet_lines):
+            if str(line[0]) == str(id):
+                n_row = i + 1
+                break
+
+        if n_row:
             ws.update(
                 [
                     [
@@ -188,7 +199,7 @@ def temp(user: User, activities: dict):
                         activity['elevation']
                     ]
                 ],
-                f'E{cell.row}:G{cell.row}',
+                f'E{n_row}:G{n_row}',
                 value_input_option=ValueInputOption.user_entered
             )
             print('Linha na planilha atualizada')
@@ -196,6 +207,8 @@ def temp(user: User, activities: dict):
             resp = StravaResponse(json=activity)
             to_add_in_sheet.append(SpreadsheetRow(resp, id).new)
             print('Atividade fora da planilha. Será adicionada depois.')
+        
+        sleep(1)
 
     print('Todas as atividades verificadas')
     if to_add_in_sheet:
