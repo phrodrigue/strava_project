@@ -194,8 +194,8 @@ def temp(user: User, activities: dict):
             ws.update(
                 [
                     [
-                        activity.get('fc_max'),
                         activity.get('fc_avg'),
+                        activity.get('fc_max'),
                         activity['elevation']
                     ]
                 ],
