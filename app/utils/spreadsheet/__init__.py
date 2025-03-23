@@ -35,7 +35,7 @@ def append_to_spreadsheet(data: StravaResponse, strava_id: int):
         }
     )
     ws.format(
-        'E',
+        'H',
         {
             'numberFormat': {
                 "type": 'NUMBER',
@@ -61,7 +61,7 @@ def update_in_spreadsheet(data: StravaResponse, strava_id: int):
 
     ws.update(
         [spreadsheet_row.new[1:]],
-        f'B{cell.row}:F{cell.row}',
+        f'B{cell.row}:I{cell.row}',
         value_input_option=ValueInputOption.user_entered
     )
     ws.format(
@@ -74,7 +74,7 @@ def update_in_spreadsheet(data: StravaResponse, strava_id: int):
         }
     )
     ws.format(
-        f'E{cell.row}',
+        f'H{cell.row}',
         {
             'numberFormat': {
                 "type": 'NUMBER',
@@ -98,10 +98,16 @@ def delete_in_spreadsheet(strava_id: int):
         value_input_option=ValueInputOption.user_entered
     )
     ws.format(
-        f'A{cell.row}:F{cell.row}',
+        f'A{cell.row}:K{cell.row}',
         {
             'textFormat': {
-                'strikethrough': True,
+                'foregroundColorStyle':  {
+                    'rgbColor': {
+                        "red": 183/255,
+                        "green": 183/255,
+                        "blue": 183/255
+                    }
+                },
             },
         }
     )

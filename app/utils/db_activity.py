@@ -1,6 +1,5 @@
 from app import db
 from app.models import Activity, ActivityState, User
-from app.utils.db_user import get_user_or_none
 from app.utils.strava.response import StravaResponse
 
 
@@ -32,13 +31,21 @@ def add_to_db(strava_response: StravaResponse, desc: str, user: User):
     if not activity:
         state_str = 'Criado' if strava_response.OK else 'Aguardando dados'
         state = get_activity_state(state_str)
-        type = strava_response.JSON.get('type')
 
-        activity = Activity(strava_id, type, desc, state, user)
+        activity = Activity(
+            strava_id = strava_id,
+            type = strava_response.JSON.get('type'),
+            desc = desc,
+            state = state,
+            user = user,
+            fc_max = strava_response.JSON.get('max_heartrate'),
+            fc_avg = strava_response.JSON.get('average_heartrate'),
+            elevation = strava_response.JSON.get('total_elevation_gain')
+        )
         db.session.add(activity)
     else:
         state = get_activity_state('Restaurado')
-        activity.type = strava_response.JSON.get('type') # type: ignore
+        activity.type = strava_response.JSON.get('type')
         activity.state = state
         activity.last_update_desc = desc
         if activity.user_id != user.strava_id:
@@ -49,10 +56,13 @@ def update_db(strava_response: StravaResponse, desc: str, user: User):
     state = get_activity_state('Atualizado')
 
     activity = get_activity(strava_response.JSON['id'])
-    activity.type = strava_response.JSON.get('type') # type: ignore
+    activity.type = strava_response.JSON.get('type')
     activity.last_update_desc = desc
     activity.state = state
     activity.user = user
+    activity.fc_max = strava_response.JSON.get('max_heartrate')
+    activity.fc_avg = strava_response.JSON.get('average_heartrate')
+    activity.elevation = strava_response.JSON.get('total_elevation_gain')
 
 
 def delete_db(strava_id: str, desc: str):

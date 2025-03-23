@@ -1,58 +1,28 @@
-import os.path
 import json
 import time
-
-import click
 from flask import current_app
 from flask.cli import AppGroup
 from gspread.utils import ValueInputOption
 import requests
 
 from app import db
-from app.models.activity import Activity
-from app.utils import generate_auth_url
+from app.models import Activity, User
 from app.utils.db_activity import get_activity_or_none, get_activity_state
-from app.utils.db_tokens import get_tokens
-from app.utils.db_user import get_user_or_none
+from app.utils.decorators import cli_auth_user_required, cli_user_and_activities_required
 from app.utils.spreadsheet import open_worksheet
 from app.utils.spreadsheet.spreadsheet_row import SpreadsheetRow
 from app.utils.strava.response import StravaResponse
-from app.utils.strava.tokens import refresh_token
 
 
 update = AppGroup('update', help='Comandos para lidar com a atualização do banco de dados e da planilha.')
 
 
 @update.command('json')
-@click.option('--user', prompt='ID do usuário', help='ID do usuário da atividade.', type=int)
-def get_all_activities(user):
+@cli_auth_user_required
+def get_all_activities(user: User, access_token):
     """
     Pega todas as atividades do Strava e salva em um JSON
     """
-    user = get_user_or_none(user)
-    if not user:
-        print('Usuário não encontrado')
-        print(f'Para fazer o login, acesse:\n{generate_auth_url("/")}')
-        return
-
-    token = get_tokens(user)
-    if not token:
-        print(f'Nenhum token encontrado para o usuário {user.name}')
-        print(f'Para fazer o login, acesse:\n{generate_auth_url("/")}')
-        return
-
-    access_token = token.access_token
-
-    # Verifica se o token expirou e renova se necessário
-    if time.time() > token.expires_at:
-        new_token = refresh_token(user)
-        if not new_token:
-            print(f'Não foi possível renovar o token do usuário {user.name}')
-            print(f'Refaça o login acessando:\n{generate_auth_url("/")}')
-            return
-        print('Token renovado.')
-        access_token = new_token['access_token']
-
     headers = {'Authorization': f'Bearer {access_token}'}
     params = {
         'after': 1704078000,    # a partir de 01-01-2024
@@ -87,37 +57,28 @@ def get_all_activities(user):
                 'type': activity['type'],
                 'sport_type': activity['sport_type'],
                 'start_date': activity['start_date'],
-                'start_date_local': activity['start_date_local']
+                'start_date_local': activity['start_date_local'],
+                'elevation': activity['total_elevation_gain'],
             }
+
+            if activity['has_heartrate']:
+                final[activity['id']]['fc_max'] = activity['max_heartrate']
+                final[activity['id']]['fc_avg'] = activity['average_heartrate']
 
         params['page'] += 1
 
-    with open('instance/all_activities.json', 'w') as file:
+    with open(current_app.config['JSON_ACTIVITY_PATH'], 'w') as file:
         json.dump(final, file, indent=4)
 
     print('Procedimento finalizado.')
 
 
 @update.command('db')
-@click.option('--user', prompt='ID do usuário', help='ID do usuário das atividades.', type=int)
-def save_to_db(user):
+@cli_user_and_activities_required
+def save_to_db(user: User, activities: dict):
     """
     Atualiza o banco de dados com as atividades salvas no arquivo JSON
     """
-    user = get_user_or_none(user)
-    if not user:
-        print('Usuário não encontrado')
-        return
-
-    file_path = current_app.config['JSON_ACTIVITY_PATH']
-
-    if not os.path.isfile(file_path):
-        print('Arquivo com atividades não encontrado.')
-        return
-
-    with open(file_path, 'r') as file:
-        activities: dict = json.load(file)
-
     criado_state = get_activity_state('Criado')
     to_add = []
 
@@ -129,7 +90,10 @@ def save_to_db(user):
                 type=activity['type'],
                 desc='Criada pela CLI',
                 state=criado_state,
-                user=user
+                user=user,
+                fc_max = activity.get('fc_max'),
+                fc_avg = activity.get('fc_avg'),
+                elevation = activity['elevation']
             )
 
             to_add.append(a)
@@ -143,19 +107,11 @@ def save_to_db(user):
 
 
 @update.command('sheet')
-def save_to_spreadsheet():
+@cli_user_and_activities_required
+def save_to_spreadsheet(user: User, activities: dict):
     """
     Atualiza a planilha com as atividades salvas no arquivo JSON
     """
-    file_path = current_app.config['JSON_ACTIVITY_PATH']
-
-    if not os.path.isfile(file_path):
-        print('Arquivo com atividades não encontrado.')
-        return
-
-    with open(file_path, 'r') as file:
-        activities: dict = json.load(file)
-
     to_add = []
     ws = open_worksheet()
     all_rows = ws.get_all_values()
@@ -181,3 +137,78 @@ def save_to_spreadsheet():
             print(r)
     else:
         print('Nenhuma linha adicionada.')
+
+
+@update.command('temp')
+@cli_user_and_activities_required
+def temp(user: User, activities: dict):
+    """
+    Atualiza as entradas no DB e na planilha com os dados da FC e da elevação
+     - comando temporário
+    """
+    ws = open_worksheet()
+
+    criado_state = get_activity_state('Atualizado')
+    to_add_in_db = []
+    to_add_in_sheet = []
+
+    for id, activity in activities.items():
+        print(f'\n--\n\nAtualizando atividade [{id}]')
+        # atualiza no DB
+        a = get_activity_or_none(id)
+        if not a:
+            a = Activity(
+                strava_id = id,
+                type = activity['type'],
+                desc = 'Criada pela CLI - FC e elevacao',
+                state = criado_state,
+                user = user,
+                fc_max = activity.get('fc_max'),
+                fc_avg = activity.get('fc_avg'),
+                elevation = activity['elevation']
+            )
+
+            to_add_in_db.append(a)
+            print(f'Atividade adicionada no DB')
+        else:
+            a.last_update_desc = 'Atualizada pela CLI - FC e elevacao'
+            a.fc_max = activity.get('fc_max')
+            a.fc_avg = activity.get('fc_avg')
+            a.elevation = activity['elevation']
+            print(f'Atividade atualizada no DB.')
+        
+        # atualiza na planilha
+        cell = ws.find(str(id))
+        if cell:
+            ws.update(
+                [
+                    [
+                        activity.get('fc_max'),
+                        activity.get('fc_avg'),
+                        activity['elevation']
+                    ]
+                ],
+                f'E{cell.row}:G{cell.row}',
+                value_input_option=ValueInputOption.user_entered
+            )
+            print('Linha na planilha atualizada')
+        else:
+            resp = StravaResponse(json=activity)
+            to_add_in_sheet.append(SpreadsheetRow(resp, id).new)
+            print('Atividade fora da planilha. Será adicionada depois.')
+
+    print('Todas as atividades verificadas')
+    if to_add_in_sheet:
+        ws.append_rows(
+            values=to_add_in_sheet,
+            value_input_option=ValueInputOption.user_entered
+        )
+        print(f'Linhas adicionadas na planilha:')
+        for r in to_add_in_sheet:
+            print(r)
+    else:
+        print('Nenhuma linha adicionada na planilha.')
+
+    db.session.add_all(to_add_in_db)
+    db.session.commit()
+    print('Procedimento finalizado.')

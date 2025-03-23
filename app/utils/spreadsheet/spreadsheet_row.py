@@ -10,10 +10,13 @@ class SpreadsheetRow:
             self.new = [
                 str(activity_id),
                 'ERRO NA API',
+                f'=HIPERLINK(\"{data.JSON["id"]}\";\"LOGIN\")',
                 data.JSON['message'],
                 '',
                 '',
-                f'=HIPERLINK(\"{data.JSON["id"]}\";\"LOGIN\")',
+                '',
+                '',
+                '',
             ]
 
         else:
@@ -31,6 +34,9 @@ class SpreadsheetRow:
                 data.JSON['name'],
                 data.JSON['type'],
                 date_obj.strftime("%d/%m/%Y"),
+                data.JSON.get('average_heartrate') or 0,
+                data.JSON.get('max_heartrate') or 0,
+                data.JSON.get('total_elevation_gain') or 0,
                 data.JSON['distance'],
                 time_str,
             ]
