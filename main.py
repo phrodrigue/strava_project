@@ -1,4 +1,4 @@
-from dotenv import load_dotenv # type: ignore
+from dotenv import load_dotenv
 import os
 
 root_path = str(os.path.abspath((os.path.dirname(__file__))))
